@@ -210,28 +210,28 @@ if __name__ == '__main__':
 
         for result in results:
             for target in targets:
-                for field, value in target.items():
-                    if (field in result) and (target[field] == result[field]) and (result['BSSID'] not in already_seen):
-                        already_seen.append(result['BSSID'])
+                if (result['BSSID'] not in already_seen) and\
+                   all(i in result.items() for i in target.items()):
+                    already_seen.append(result['BSSID'])
 
-                        # Выводим данные о цели
-                        print('Обнаружен роутер Tenda')
-                        order = ['BSSID', 'ESSID', 'Level', 'Security type', 'WPS',
-                                 'WPS locked', 'UUID', 'Manufacturer', 'Model',
-                                 'Model number', 'Serial number', 'Device name']
-                        for key in order:
-                            if key not in result:
-                                continue
-                            print('{}: {}'.format(key, result[key]))
-                        print('\n')
+                    # Выводим данные о цели
+                    print('Обнаружен роутер Tenda')
+                    order = ['BSSID', 'ESSID', 'Level', 'Security type', 'WPS',
+                             'WPS locked', 'UUID', 'Manufacturer', 'Model',
+                             'Model number', 'Serial number', 'Device name']
+                    for key in order:
+                        if key not in result:
+                            continue
+                        print('{}: {}'.format(key, result[key]))
+                    print('\n')
 
-                        # Уведомляем пользователя
-                        if args.sound:
-                            makeSound()
-                        if args.toast:
-                            makeToast('Обнаружен роутер Tenda\nBSSID: {}\nESSID: {}'.format(
-                                      result['BSSID'], result['ESSID']))
-                        if args.vibrate:
-                            makeVibration()
+                    # Уведомляем пользователя
+                    if args.sound:
+                        makeSound()
+                    if args.toast:
+                        makeToast('Обнаружен роутер Tenda\nBSSID: {}\nESSID: {}'.format(
+                                  result['BSSID'], result['ESSID']))
+                    if args.vibrate:
+                        makeVibration()
 
         time.sleep(args.delay)
