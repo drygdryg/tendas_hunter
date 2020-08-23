@@ -5,7 +5,7 @@ import codecs
 
 
 class WiFiScanner():
-    """docstring for WiFiScanner"""
+    """iw-based Wi-Fi networks scanner"""
     def __init__(self, interface):
         self.interface = interface
 
@@ -16,13 +16,17 @@ class WiFiScanner():
                     {
                         'Security type': 'Unknown',
                         'WPS': False,
+                        'WPS state': False,
                         'WPS locked': False,
+                        'Response type': False,
                         'UUID': '',
                         'Manufacturer': '',
                         'Model': '',
                         'Model number': '',
                         'Serial number': '',
-                        'Device name': ''
+                        'Primary device type': '',
+                        'Device name': '',
+                        'Config methods': []
                      }
                 )
             networks[-1]['BSSID'] = result.group(1).upper()
@@ -57,10 +61,16 @@ class WiFiScanner():
         def handle_wps(line, result, networks):
             networks[-1]['WPS'] = result.group(1)
 
+        def handle_wpsState(line, result, networks):
+            networks[-1]['WPS state'] = int(result.group(1))
+
         def handle_wpsLocked(line, result, networks):
             flag = int(result.group(1), 16)
             if flag:
                 networks[-1]['WPS locked'] = True
+
+        def handle_responseType(line, result, networks):
+            networks[-1]['Response type'] = int(result.group(1))
 
         def handle_uuid(line, result, networks):
             d = result.group(1)
@@ -82,9 +92,15 @@ class WiFiScanner():
             d = result.group(1)
             networks[-1]['Serial number'] = codecs.decode(d, 'unicode-escape').encode('latin1').decode('utf-8', errors='ignore')
 
+        def handle_primaryDeviceType(line, result, networks):
+            networks[-1]['Primary device type'] = result.group(1)
+
         def handle_deviceName(line, result, networks):
             d = result.group(1)
             networks[-1]['Device name'] = codecs.decode(d, 'unicode-escape').encode('latin1').decode('utf-8', errors='ignore')
+
+        def handle_configMethods(line, result, networks):
+            networks[-1]['Config methods'] = result.group(1).split(', ')
 
         matchers = {
             re.compile(r'BSS (\S+)( )?\(on \w+\)'): handle_network,
@@ -94,13 +110,17 @@ class WiFiScanner():
             re.compile(r'(RSN):\t [*] Version: (\d+)'): handle_securityType,
             re.compile(r'(WPA):\t [*] Version: (\d+)'): handle_securityType,
             re.compile(r'WPS:\t [*] Version: (([0-9]*[.])?[0-9]+)'): handle_wps,
+            re.compile(r' [*] Wi-Fi Protected Setup State: (\d)'): handle_wpsState,
             re.compile(r' [*] AP setup locked: (0x[0-9]+)'): handle_wpsLocked,
+            re.compile(r' [*] Response Type: (\d)'): handle_responseType,
             re.compile(r' [*] UUID: (.*)'): handle_uuid,
             re.compile(r' [*] Manufacturer: (.*)'): handle_manufacturer,
             re.compile(r' [*] Model: (.*)'): handle_model,
             re.compile(r' [*] Model Number: (.*)'): handle_modelNumber,
             re.compile(r' [*] Serial Number: (.*)'): handle_serialNumber,
-            re.compile(r' [*] Device name: (.*)'): handle_deviceName
+            re.compile(r' [*] Primary Device Type: (.*)'): handle_primaryDeviceType,
+            re.compile(r' [*] Device name: (.*)'): handle_deviceName,
+            re.compile(r' [*] Config methods: (.*)'): handle_configMethods
         }
 
         cmd = 'iw dev {} scan'.format(self.interface)
